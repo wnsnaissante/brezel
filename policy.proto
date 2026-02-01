@@ -1,0 +1,35 @@
+syntax = "proto3";
+package brezel.policy;
+
+import "common.proto";
+
+service PolicyService {
+    rpc WatchPolicies(WatchRequest) returns (stream PolicyUpdate);
+    rpc AddBlacklist(BlacklistEntry) returns (Result);
+    rpc UpdateBlacklist(BlacklistEntry) returns (Result);
+    rpc RemoveBlacklist(BlacklistEntry) returns (Result);
+}
+
+message WatchRequest {}
+
+message PolicyUpdate {
+    enum Type { ADD = 0; DELETE = 1; UPDATE = 2; SYNC = 3; }
+    Type type = 1;
+    repeated BlacklistEntry entries = 2;
+}
+
+message BlacklistEntry {
+    oneof entry {
+        uint32 src_ip = 1;
+        uint32 dst_ip = 2;
+        uint32 src_port = 3;
+        uint32 dst_port = 4;
+        uint32 protocol = 5;
+        brezel.common.FlowKey flow = 6;
+    }
+}
+
+message Result {
+    bool success = 1;
+    string message = 2;
+}
