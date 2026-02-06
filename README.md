@@ -2,15 +2,13 @@
 
 gRPC/Protobuf definitions for UTM system.
 
-## Structure
-
 ```
 brezel/
+├── src/
+│   └── lib.rs      # IP address conversion functions
 ├── common.proto    # Common types (FlowKey)
 └── policy.proto    # Policy service API
 ```
-
-## Services
 
 ### PolicyService
 
@@ -28,11 +26,6 @@ brezel/
 ```bash
 # Add to your project
 git submodule add <brezel-repo-url> proto
-
-# Clone with submodules
-git clone --recurse-submodules <your-project-url>
-```
-
 
 ## Related Projects
 
