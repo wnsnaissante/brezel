@@ -5,18 +5,29 @@ gRPC/Protobuf definitions shared by UTMM and Zashchita.
 ```
 brezel/
 ├── src/
-│   └── lib.rs      # Shared Rust helpers
-├── common.proto    # Common shared types
-├── inference.proto # Zashchita -> ML inference batch API
-└── policy.proto    # UTMM -> Zashchita policy apply API
+│   └── lib.rs       # Shared Rust helpers
+├── common.proto     # Common shared types
+├── inference.proto  # Zashchita -> ML inference batch API
+└── policy.proto     # UTMM -> Zashchita runtime rule apply API
 ```
 
 ### PolicyService
 
 | RPC | Description |
 |---|---|
-| `ReplacePolicySet` | Replace the full active policy set in Zashchita |
+| `ReplaceRuntimeRules` | Prepare the inactive runtime-rule bank, then flip the active bank in Zashchita |
 | `GetApplyStatus` | Return the last applied version and apply state |
+
+`policy.proto` is intentionally narrower than UTMM's general policy model. It
+only carries exact-match runtime rules that Zashchita can project directly into
+the current eBPF denylist maps.
+
+Zashchita applies runtime rules through a double-buffered bank flip: it fills
+the inactive bank, then switches `ACTIVE_POLICY_BANK` once the new bank is
+ready.
+
+`applied_version` means "last version whose bank flip completed", not merely
+"last request received".
 
 ### InferenceService
 
