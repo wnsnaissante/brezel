@@ -2,34 +2,75 @@ syntax = "proto3";
 package brezel.policy;
 
 import "common.proto";
+import "google/protobuf/timestamp.proto";
 
 service PolicyService {
-    rpc WatchPolicies(WatchRequest) returns (stream PolicyUpdate);
-    rpc AddBlacklist(BlacklistEntry) returns (Result);
-    rpc UpdateBlacklist(BlacklistEntry) returns (Result);
-    rpc RemoveBlacklist(BlacklistEntry) returns (Result);
+    rpc ReplacePolicySet(ReplacePolicySetRequest) returns (ReplacePolicySetResponse);
+    rpc GetApplyStatus(GetApplyStatusRequest) returns (GetApplyStatusResponse);
 }
 
-message WatchRequest {}
-
-message PolicyUpdate {
-    enum Type { ADD = 0; DELETE = 1; UPDATE = 2; SYNC = 3; }
-    Type type = 1;
-    repeated BlacklistEntry entries = 2;
+enum PolicyType {
+    POLICY_TYPE_UNSPECIFIED = 0;
+    POLICY_TYPE_FIREWALL = 1;
+    POLICY_TYPE_DPI = 2;
+    POLICY_TYPE_USER_RULE = 3;
 }
 
-message BlacklistEntry {
-    oneof entry {
-        uint32 src_ip = 1;
-        uint32 dst_ip = 2;
-        uint32 src_port = 3;
-        uint32 dst_port = 4;
-        uint32 protocol = 5;
-        brezel.common.FlowKey flow = 6;
-    }
+enum PolicyAction {
+    POLICY_ACTION_UNSPECIFIED = 0;
+    POLICY_ACTION_ALLOW = 1;
+    POLICY_ACTION_BLOCK = 2;
+    POLICY_ACTION_MONITOR = 3;
 }
 
-message Result {
+enum ApplyState {
+    APPLY_STATE_UNSPECIFIED = 0;
+    APPLY_STATE_APPLIED = 1;
+    APPLY_STATE_REJECTED = 2;
+    APPLY_STATE_IN_PROGRESS = 3;
+}
+
+message ProtocolMatch {
+    uint32 value = 1;
+}
+
+message PolicyRule {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    PolicyType type = 4;
+    PolicyAction action = 5;
+    bool enabled = 6;
+    string source_cidr = 7;
+    string destination_cidr = 8;
+    brezel.common.PortRange source_port_range = 9;
+    brezel.common.PortRange destination_port_range = 10;
+    ProtocolMatch protocol = 11;
+    google.protobuf.Timestamp created_at = 12;
+    google.protobuf.Timestamp updated_at = 13;
+}
+
+message ReplacePolicySetRequest {
+    string version = 1;
+    google.protobuf.Timestamp generated_at = 2;
+    repeated PolicyRule policies = 3;
+}
+
+message ReplacePolicySetResponse {
     bool success = 1;
     string message = 2;
+    string applied_version = 3;
+    uint32 applied_policy_count = 4;
+    ApplyState state = 5;
+    google.protobuf.Timestamp applied_at = 6;
+}
+
+message GetApplyStatusRequest {}
+
+message GetApplyStatusResponse {
+    string applied_version = 1;
+    uint32 applied_policy_count = 2;
+    ApplyState state = 3;
+    string message = 4;
+    google.protobuf.Timestamp applied_at = 5;
 }

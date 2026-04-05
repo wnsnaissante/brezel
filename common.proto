@@ -9,3 +9,8 @@ message FlowKey {
     uint32 dst_port = 4;
     uint32 protocol = 5;
 }
+
+message PortRange {
+    uint32 from = 1;
+    uint32 to = 2;
+}

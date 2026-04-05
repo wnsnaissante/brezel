@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package brezel.inference;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+
+service InferenceService {
+    rpc AnalyzeFeatureBatch(AnalyzeFeatureBatchRequest) returns (AnalyzeFeatureBatchResponse);
+    rpc AnalyzeDpiBatch(AnalyzeDpiBatchRequest) returns (AnalyzeDpiBatchResponse);
+    rpc GetModelStatus(GetModelStatusRequest) returns (GetModelStatusResponse);
+}
+
+enum FlowDirection {
+    FLOW_DIRECTION_UNSPECIFIED = 0;
+    FLOW_DIRECTION_INBOUND = 1;
+    FLOW_DIRECTION_OUTBOUND = 2;
+    FLOW_DIRECTION_INTERNAL = 3;
+}
+
+enum FlowState {
+    FLOW_STATE_UNSPECIFIED = 0;
+    FLOW_STATE_NEW = 1;
+    FLOW_STATE_ACTIVE = 2;
+    FLOW_STATE_CLOSED = 3;
+    FLOW_STATE_EXPIRED = 4;
+}
+
+enum RecommendationAction {
+    RECOMMENDATION_ACTION_UNSPECIFIED = 0;
+    RECOMMENDATION_ACTION_ALLOW = 1;
+    RECOMMENDATION_ACTION_BLOCK = 2;
+    RECOMMENDATION_ACTION_MONITOR = 3;
+}
+
+message FlowFeatures {
+    string flow_id = 1;
+    brezel.common.FlowKey key = 2;
+    FlowDirection direction = 3;
+    FlowState state = 4;
+    google.protobuf.Timestamp started_at = 5;
+    google.protobuf.Timestamp ended_at = 6;
+    uint64 duration_ms = 7;
+    uint64 bytes_in = 8;
+    uint64 bytes_out = 9;
+    uint64 packets_in = 10;
+    uint64 packets_out = 11;
+    uint32 tcp_flags_mask = 12;
+    string interface_in = 13;
+    string interface_out = 14;
+    string source_mac = 15;
+    string destination_mac = 16;
+}
+
+message AnalyzeFeatureBatchRequest {
+    string batch_id = 1;
+    google.protobuf.Timestamp captured_at = 2;
+    repeated FlowFeatures flows = 3;
+}
+
+message FeatureDecision {
+    string flow_id = 1;
+    double score = 2;
+    string label = 3;
+    bool needs_dpi = 4;
+    RecommendationAction preliminary_action = 5;
+    repeated string reason_codes = 6;
+}
+
+message AnalyzeFeatureBatchResponse {
+    string batch_id = 1;
+    string model_name = 2;
+    string model_version = 3;
+    google.protobuf.Timestamp decided_at = 4;
+    repeated FeatureDecision decisions = 5;
+}
+
+message PacketSample {
+    uint32 ordinal = 1;
+    bytes packet_bytes = 2;
+    uint32 original_length = 3;
+}
+
+message DpiFlowWindow {
+    string flow_id = 1;
+    brezel.common.FlowKey key = 2;
+    google.protobuf.Timestamp captured_at = 3;
+    repeated PacketSample packets = 4;
+}
+
+message AnalyzeDpiBatchRequest {
+    string batch_id = 1;
+    repeated DpiFlowWindow flows = 2;
+}
+
+message DpiDecision {
+    string flow_id = 1;
+    double score = 2;
+    string label = 3;
+    RecommendationAction final_action = 4;
+    repeated string reason_codes = 5;
+    uint32 suggested_ttl_seconds = 6;
+}
+
+message AnalyzeDpiBatchResponse {
+    string batch_id = 1;
+    string model_name = 2;
+    string model_version = 3;
+    google.protobuf.Timestamp decided_at = 4;
+    repeated DpiDecision decisions = 5;
+}
+
+message GetModelStatusRequest {}
+
+message ModelStatus {
+    bool ready = 1;
+    string model_name = 2;
+    string model_version = 3;
+    string message = 4;
+}
+
+message GetModelStatusResponse {
+    ModelStatus feature_model = 1;
+    ModelStatus dpi_model = 2;
+}

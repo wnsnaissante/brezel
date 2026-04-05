@@ -1,34 +1,42 @@
 # Brezel
 
-gRPC/Protobuf definitions for UTM system.
+gRPC/Protobuf definitions shared by UTMM and Zashchita.
 
 ```
 brezel/
 ├── src/
-│   └── lib.rs      # IP address conversion functions
-├── common.proto    # Common types (FlowKey)
-└── policy.proto    # Policy service API
+│   └── lib.rs      # Shared Rust helpers
+├── common.proto    # Common shared types
+├── inference.proto # Zashchita -> ML inference batch API
+└── policy.proto    # UTMM -> Zashchita policy apply API
 ```
 
 ### PolicyService
 
 | RPC | Description |
 |---|---|
-| `WatchPolicies` | Real-time policy change notifications (Server Stream) |
-| `AddBlacklist` | Add blacklist entry |
-| `UpdateBlacklist` | Update blacklist entry |
-| `RemoveBlacklist` | Remove blacklist entry |
+| `ReplacePolicySet` | Replace the full active policy set in Zashchita |
+| `GetApplyStatus` | Return the last applied version and apply state |
+
+### InferenceService
+
+| RPC | Description |
+|---|---|
+| `AnalyzeFeatureBatch` | First-stage LightGBM analysis over flow features |
+| `AnalyzeDpiBatch` | Second-stage Mamba DPI analysis over 5 packet samples |
+| `GetModelStatus` | Return readiness and version info for both models |
 
 ## Usage
 
 ### As Git Submodule
 
 ```bash
-# Add to your project
 git submodule add <brezel-repo-url> proto
+```
 
 ## Related Projects
 
+- **UTMM** - Policy management backend and source of truth
 - **zashchita** - High-speed packet filtering with eBPF
 
 ## License
